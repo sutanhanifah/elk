@@ -1,0 +1,7 @@
+apm-server:
+  host: "0.0.0.0:8200"
+  rum:
+    enabled: true
+    event_rate:
+      limit: 1000
+      lru_size: 1000

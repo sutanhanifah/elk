@@ -1,0 +1,67 @@
+version: '3.7'
+
+services:
+  elasticsearch:
+    image: bitnami/elasticsearch:8.16.1
+    container_name: elasticsearch
+    environment:
+      - ELASTICSEARCH_CLUSTER_NAME=elasticsearch
+      - ELASTICSEARCH_NODE_NAME=elasticsearch
+      - ELASTICSEARCH_SINGLE_NODE=true
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      #- /media/periksa/62096d97-fb26-4371-ac9b-abfab1363e2f/elasticsearch_data/elasticsearch:/bitnami/elasticsearch/data
+      - /mnt/hdd/elk/elasticsearch:/bitnami/elasticsearch/data
+    restart: always
+
+  logstash:
+    image: bitnami/logstash:8.16.1
+    container_name: logstash
+    environment:
+      - LOGSTASH_INPUT_BEATS_PORT=5044
+      - LOGSTASH_ELASTICSEARCH_HOST=elasticsearch
+      - LOGSTASH_ELASTICSEARCH_PORT_NUMBER=9200
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./logstash.conf:/opt/bitnami/logstash/pipeline/logstash.conf:ro
+      #- /media/periksa/62096d97-fb26-4371-ac9b-abfab1363e2f/elasticsearch_data/logstash:/bitnami/logstash
+      - /mnt/hdd/elk/logstash:/bitnami/logstash
+    restart: always
+
+  kibana:
+    image: bitnami/kibana:8.16.1
+    container_name: kibana
+    environment:
+      - KIBANA_ELASTICSEARCH_URL=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    volumes:
+      #- /media/periksa/62096d97-fb26-4371-ac9b-abfab1363e2f/elasticsearch_data/kibana:/bitnami/kibana
+      - /mnt/hdd/elk/kibana:/bitnami/kibana
+    restart: always
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.16.1
+    container_name: apm-server
+    ports:
+      - "8200:8200"
+    depends_on:
+      - elasticsearch
+      - kibana
+    command: >
+      apm-server -e
+      -E output.elasticsearch.enabled=true
+      -E output.elasticsearch.hosts=["http://elasticsearch:9200"]
+      -E setup.kibana.host=http://kibana:5601
+      -E apm-server.host=0.0.0.0:8200
+      -E apm-server.rum.enabled=true
+      -E apm-server.rum.allow_origins=['*']
+      -E apm-server.auth.anonymous.rate_limit.event_limit=300
+
+volumes:
+  elasticsearch_data:
+    driver: local
