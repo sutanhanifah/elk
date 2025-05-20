@@ -32,6 +32,18 @@ services:
       - /mnt/hdd/elk/logstash:/bitnami/logstash
     restart: always
 
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.16.1
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - logstash
+    restart: always
+
   kibana:
     image: bitnami/kibana:8.16.1
     container_name: kibana
